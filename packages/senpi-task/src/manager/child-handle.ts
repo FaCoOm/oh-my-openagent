@@ -3,6 +3,7 @@ import { mapExitOutcomeToError } from "../runners/rpc/exit-mapping"
 import type { HostSessionChildHandle } from "../runners/rpc-host/handle-port"
 import type { RpcChildHandle, RpcEntriesResult, RpcSpawnSpec, RpcSwitchSessionResult } from "../runners/types"
 import type { SuspensionReason } from "../state"
+import type { ChildExtensionListener } from "../runners/child-extension-events"
 import { HOST_TURN_RESUMED_EVENT } from "./host-turn-resumed"
 
 export type { RunnerOutcome } from "../runners/in-process/child-handle"
@@ -50,6 +51,7 @@ export type ManagedChildHandle = {
   followUp(text: string): Promise<void>
   abort(): Promise<void>
   subscribe(listener: ManagedChildListener): () => void
+  subscribeExtensionEvents?(listener: ChildExtensionListener): () => void
   waitForOutcome(): Promise<RunnerOutcome>
   // Present on process children: fires when the child starts a run on its own after its turn
   // settled (a monitor or background job woke it), so the manager can reopen the record.
@@ -104,6 +106,7 @@ export function adaptRpcHandle(handle: RpcChildHandle): ManagedChildHandle {
     followUp: (text) => handle.followUp(text),
     abort: () => handle.abort(),
     subscribe: (listener) => subscribeManagedRpc(handle, listener),
+    ...(handle.subscribeExtensionEvents === undefined ? {} : { subscribeExtensionEvents: handle.subscribeExtensionEvents }),
     ...(handle.onSelfResumed === undefined ? {} : { onSelfResumed: (listener: () => void) => handle.onSelfResumed?.(listener) ?? (() => undefined) }),
     waitForOutcome: () => handle.waitForOutcome === undefined ? rpcOutcome(handle) : handle.waitForOutcome(),
     hasExited: () => handle.hasExited?.() ?? handle.exitOutcome() !== undefined,
