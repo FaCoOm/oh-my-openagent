@@ -1,3 +1,16 @@
+## 2026-10-01 - Empty project scaffolding does not select legacy runtime storage
+
+- `store/project-state-directory.ts` keeps the agent-directory store when old
+  observers have created only empty project directories. Populated legacy stores,
+  symlinks, unreadable subtrees and malformed artifact filenames retain their
+  existing location so live state and diagnostics remain reachable.
+- The lookup tests exercise empty scaffolding, symlinked records and a malformed
+  task artifact through the real record store. The DAG fixture explicitly marks
+  its legacy store rather than depending on empty directories selecting it.
+- Preserves and extends drakeo338's state-lookup work from PR #9367. The separate
+  desktop observer fix removes the directory writer; this lookup change alone is
+  not evidence that first-turn project writes are fixed.
+
 ## 2026-10-01 - Builtin chain rungs name thinking levels their models accept (#9378)
 
 - `category/fallback-chains.ts`: `quick` opencode-go `minimax-m3` / `minimax-m2.7` drop `variant: "max"` (the child now inherits the
