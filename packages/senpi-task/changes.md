@@ -1,12 +1,19 @@
-## 2026-10-01 - Empty project scaffolding does not select legacy runtime storage
+## 2026-10-01 - Empty project scaffolding does not select legacy runtime storage (#9395)
 
 - `store/project-state-directory.ts` keeps the agent-directory store when old
   observers have created only empty project directories. Populated legacy stores,
-  symlinks, unreadable subtrees and malformed artifact filenames retain their
-  existing location so live state and diagnostics remain reachable.
-- The lookup tests exercise empty scaffolding, symlinked records and a malformed
-  task artifact through the real record store. The DAG fixture explicitly marks
-  its legacy store rather than depending on empty directories selecting it.
+  a store root that is a symlink or a file, symlink entries, unreadable subtrees
+  and malformed artifact filenames retain their existing location so live state
+  and diagnostics remain reachable.
+- A legacy store seen holding records is marked with `.in-project`, so it stays
+  selected after its records are expunged and one project's records never split
+  across the project and the agent directory.
+- The resolver tests cover empty scaffolding, symlinked records, root symlink and
+  file stores, and adoption that survives expunge. The malformed-artifact case
+  goes through the real record store, and `omo-senpi`'s engine test composes the
+  task engine over empty scaffolding and checks nothing is written into it. The
+  DAG fixture marks its legacy store rather than depending on empty directories
+  selecting it.
 - Preserves and extends drakeo338's state-lookup work from PR #9367. The separate
   desktop observer fix removes the directory writer; this lookup change alone is
   not evidence that first-turn project writes are fixed.
