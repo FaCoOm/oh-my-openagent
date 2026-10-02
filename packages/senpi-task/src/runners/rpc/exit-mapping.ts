@@ -17,11 +17,33 @@ export type ChildExitInput = {
  * what Node's `process.kill`/`taskkill /F` become there).
  */
 const WINDOWS_TERMINATION_EXIT_CODE = 1
-const WINDOWS_BUN_REAPER_ADVISORY = "child reaper unavailable under Bun on win32: children orphaned by a terminated worker thread stay as zombies until this"
+/**
+ * The sentence senpi's `startHostChildReaper` writes to stderr when Bun on Windows has no child
+ * reaper (`packages/coding-agent/src/modes/rpc/child-reaper.ts`). Matched as source text: nothing else
+ * a child writes is treated as this advisory.
+ */
+const WINDOWS_BUN_REAPER_ADVISORY = "child reaper unavailable under Bun on win32: children orphaned by a terminated worker thread stay as zombies until this host exits"
+/** The shortest cut-short copy accepted at the very end of stderr, as #9347 already accepted it. */
+const WINDOWS_BUN_REAPER_ADVISORY_HEAD = "child reaper unavailable under Bun on win32: children orphaned by a terminated worker thread stay as zombies until this"
 
+/**
+ * True only when stderr is nothing but copies of the advisory sentence. A copy may be split across
+ * lines at any point, and only that copy's own remaining words may follow it. A line holding anything
+ * else - including the advisory's head followed by other text, or a piece of the sentence with no
+ * copy started before it - makes the exit a crash. The last copy may stop short at the end of stderr,
+ * but not before the advisory's head.
+ */
 function hasOnlyWindowsStartupAdvisories(stderr: string): boolean {
-  const lines = stderr.trim().split(/\r?\n/).filter((line) => line.trim().length > 0)
-  return lines.length > 0 && lines.every((line) => line.startsWith(WINDOWS_BUN_REAPER_ADVISORY))
+  const lines = stderr.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0)
+  let owed: string | undefined
+  for (const line of lines) {
+    const expected = owed ?? WINDOWS_BUN_REAPER_ADVISORY
+    if (!expected.startsWith(line)) return false
+    owed = expected.slice(line.length).trim() || undefined
+  }
+  if (owed === undefined) return lines.length > 0
+  const written = WINDOWS_BUN_REAPER_ADVISORY.slice(0, WINDOWS_BUN_REAPER_ADVISORY.length - owed.length).trimEnd()
+  return written.length >= WINDOWS_BUN_REAPER_ADVISORY_HEAD.length
 }
 
 /**
