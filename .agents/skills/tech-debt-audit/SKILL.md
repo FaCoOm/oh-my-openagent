@@ -3,6 +3,25 @@ name: tech-debt-audit
 description: "Thorough, file-cited technical debt audit across 9 dimensions using AST-grep (tree-sitter), grep, LSP, and language-native tooling. Produces TECH_DEBT_AUDIT.md with severity, effort estimates, and prioritized fixes. Use when asked for codebase health check, tech debt audit, architecture review, code quality assessment, or cleanup planning. Triggers: 'tech debt', 'technical debt', 'debt audit', 'code health', 'technical debt audit', 'codebase health check', 'find tech debt', 'debt analysis', 'audit code quality'."
 ---
 
+## Cross-Harness Tool Compatibility & Execution Guide
+
+When executing this skill across different agent harnesses, translate workflow operations into the active environment's native primitives:
+
+| Workflow Operation | OpenCode (OMO) | Google Antigravity (AGY) | Codex CLI (OMO Light) | Claude Code / Generic |
+|---|---|---|---|---|
+| **Spawn Subagent** | `call_omo_agent(...)` or `task(...)` | `invoke_subagent(Role, Prompt, Model)` | `multi_agent_v1.spawn_agent(...)` | Subagent tool / background CLI |
+| **Define Persona** | `agentSources` / config | `define_subagent(name, prompt)` | `agents/openai.yaml` roles | System prompt prepend |
+| **Background Task**| `task(run_in_background=true)` | `run_command(WaitMsBeforeAsync)` | `spawn_agent` + async wait | `nohup` / `&` background execution |
+| **File Read** | `read` / `file_read` | `view_file(AbsolutePath, Start, End)` | `read_file` | Read tool / cat |
+| **File Edit** | `edit` (hashline) / `apply_patch`| `replace_file_content` / `write_to_file` | `apply_patch` / `file_edit` | Edit tool / patch |
+| **Code Intelligence**| `lsp_*` aliases / `grep` | `codegraph_*` MCP / `grep` | `lsp_*` / `grep` | grep / ripgrep |
+| **Browser Action** | `browser` (`omowright`) | `agent-browser` MCP / `read_url_content`| `browser` tool | Playwright / curl |
+| **Deliverables** | `.omo/plans/`, `.omo/evidence/` | `resources/` and brain artifacts | `.omo/evidence/` | Repo root / docs |
+| **User Interaction**| First-turn chat prompt | `ask_question(...)` interactive modal | TUI stdin | CLI prompt / question tool |
+
+---
+
+
 # Tech Debt Audit Protocol
 
 Model-agnostic technical debt audit for oh-my-openagent (OMO). Uses OMO's built-in tools (`grep`, `glob`, `bash` with `sg`, `read`, `lsp_diagnostics`, `task`). Produces a grounded, citable `TECH_DEBT_AUDIT.md` artifact.
